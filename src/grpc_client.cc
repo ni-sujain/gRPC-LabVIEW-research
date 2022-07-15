@@ -166,7 +166,7 @@ LIBRARY_EXPORT int32_t CloseClient(grpc_labview::gRPCid* clientId)
 
 //---------------------------------------------------------------------
 //---------------------------------------------------------------------
-LIBRARY_EXPORT int32_t ClientUnaryCall(grpc_labview::gRPCid* clientId, grpc_labview::MagicCookie* occurrence, const char* methodName, const char* requestMessageName, const char* responseMessageName, int8_t* requestCluster, grpc_labview::gRPCid** callId)
+LIBRARY_EXPORT int32_t ClientUnaryCall(grpc_labview::gRPCid* clientId, grpc_labview::MagicCookie* occurrence, const char* methodName, const char* requestMessageName, const char* responseMessageName, int8_t* requestCluster, grpc_labview::gRPCid** callId, int32_t clientDeadlineMs=-1)
 {
     auto client = clientId->CastTo<grpc_labview::LabVIEWgRPCClient>();
     if (!client)
@@ -188,6 +188,14 @@ LIBRARY_EXPORT int32_t ClientUnaryCall(grpc_labview::gRPCid* clientId, grpc_labv
     *callId = clientCall;
     clientCall->_client = client;
     clientCall->_methodName = methodName;
+    
+    if (clientDeadlineMs > 0)
+    {
+        std::chrono::system_clock::time_point deadline =
+            std::chrono::system_clock::now() + std::chrono::milliseconds(clientDeadlineMs);
+        clientCall->_context.set_deadline(deadline);
+    }
+
     clientCall->_occurrence = *occurrence;
     clientCall->_request = std::make_shared<grpc_labview::LVMessage>(requestMetadata);
     clientCall->_response = std::make_shared<grpc_labview::LVMessage>(responseMetadata);
